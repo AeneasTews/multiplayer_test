@@ -20,7 +20,8 @@ wss.on("connection", (ws) => {
   ws.on("message", (data) => {
     console.log("received: %s", data);
   });
-
+  // TODO: the ws server needs to check whether the user can actually authenticate, this will be accomplished by using get_user
+  // TODO: the server needs to receive data from all connected clients and then broadcast the data to all clients
   ws.send("something");
 });
 
