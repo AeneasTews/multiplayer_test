@@ -1,5 +1,6 @@
 import pygame as pg
-import player
+from game_scene import GameScene
+from login_scene import LoginScene
 
 if __name__ == "__main__":
     # init
@@ -11,13 +12,11 @@ if __name__ == "__main__":
     # framerate
     clock = pg.time.Clock()
 
-    # test
-    player = player.Player(number=1, game_size=size)
-    playersprite = pg.sprite.GroupSingle()
-    playersprite.add(player)
-    background = pg.surface.Surface(size)
-    background.convert()
-    background.fill((25, 25, 25))
+    # game state
+    game_state = "login"
+
+    #scene = GameScene(screen)
+    scene = LoginScene(screen)
 
     # game loop
     while True:
@@ -27,24 +26,13 @@ if __name__ == "__main__":
                 pg.quit()
                 exit()
 
-            elif event.type == pg.KEYDOWN:
-                if event.key == pg.K_UP:
-                    player.accelerate(acceleration=0.1)
-                elif event.key == pg.K_DOWN:
-                    player.accelerate(acceleration=-0.1)
-                elif event.key == pg.K_LEFT:
-                    player.rotate(speed=-4)
-                elif event.key == pg.K_RIGHT:
-                    player.rotate(speed=4)
-            elif event.type == pg.KEYUP:
-                if event.key == pg.K_UP or event.key == pg.K_DOWN:
-                    player.accelerate(acceleration=0)
-                if event.key == pg.K_LEFT or event.key == pg.K_RIGHT:
-                    player.rotate(speed=0)
+            elif event.type == pg.KEYDOWN or event.type == pg.KEYUP:
+                scene.handle_key(event)
+            elif event.type == pg.MOUSEBUTTONDOWN or event.type == pg.MOUSEMOTION:
+                scene.handle_mouse(event)
 
-        # test
-        playersprite.update()
-        screen.blit(background, (0, 0))
-        playersprite.draw(screen)
+        scene.update()
 
         pg.display.flip()
+        game_state = scene.get_next_scene()
+

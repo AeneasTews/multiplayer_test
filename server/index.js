@@ -58,6 +58,19 @@ app.post("/create_user", async (req, res) => {
   }
 });
 
+app.post("/login", async (req, res) => {
+  const req_data = req.body;
+  if (await get_user(req_data.username)) {
+    res.json({
+      "status": "success"
+    });
+  } else {
+    res.json({
+      "status": "failed"
+    });
+  }
+});
+
 const server = app.listen(http_port, async () => {
   console.log(`HTTP server listening on port ${http_port}`);
   console.log(`Websocket server listening on port ${ws_port}`);

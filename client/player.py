@@ -20,7 +20,7 @@ class Player(pg.sprite.Sprite):
         self.direction = pg.math.Vector2(1, 0)
 
         # initialize values for movement
-        self.speed = 1
+        self.speed = 0
         self.acceleration = 0
         self.MAX_SPEED = 3
         self.RESISTANCE = 0.02
