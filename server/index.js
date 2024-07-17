@@ -1,9 +1,9 @@
 import { WebSocketServer } from "ws";
 import express from "express";
 import { fileURLToPath } from 'url';
-import path from 'path'
+import path from 'path';
 import * as bodyParser from "express";
-import {get_user, create_user, close} from "./scripts/database.js"
+import {get_user, create_user, close} from "./scripts/database.js";
 
 // Initialization
 const ws_port = 8080;
@@ -15,14 +15,32 @@ const __dirname = path.dirname(__filename); // get the name of the directory
 
 // Web Socket Setup
 const wss = new WebSocketServer({ port: ws_port });
+const users = [];
 
 wss.on("connection", (ws) => {
-  ws.on("message", (data) => {
+  ws.on("message", async (data) => {
+    data = JSON.parse(data);
     console.log("received: %s", data);
+
+    if (data.action === 'login') {
+      if ((await get_user(data.data.username)).passwd_hash === data.data.passwd_hash) {
+        const response = {result: 'success'};
+        ws.send(JSON.stringify(response));
+        // TODO: add every new connection to a list or dictionary or something
+        users.push({ws: [0, 0, 0, data.data.car]});
+      } else {
+        const response = {result: 'failed'};
+        ws.send(JSON.stringify(response));
+        ws.close();
+      }
+    }
+
+    if (data.action === "update_position") {
+      const response = {result: 'failed'};
+      ws.send(JSON.stringify(response));
+    }
   });
-  // TODO: the ws server needs to check whether the user can actually authenticate, this will be accomplished by using get_user
   // TODO: the server needs to receive data from all connected clients and then broadcast the data to all clients
-  ws.send("something");
 });
 
 // Application setup
@@ -61,7 +79,7 @@ app.post("/create_user", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   const req_data = req.body;
-  if (await get_user(req_data.username)) {
+  if ((await get_user(req_data.username)).passwd_hash === req_data.passwd_hash) {
     res.json({
       "status": "success"
     });

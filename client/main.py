@@ -1,6 +1,7 @@
 import pygame as pg
 from game_scene import GameScene
 from login_scene import LoginScene
+from connection_manager import ConnectionManager
 
 if __name__ == "__main__":
     # init
@@ -13,10 +14,8 @@ if __name__ == "__main__":
     clock = pg.time.Clock()
 
     # game state
-    game_state = "login"
-
-    #scene = GameScene(screen)
-    scene = LoginScene(screen)
+    connection_manager = ConnectionManager()
+    scene = LoginScene(screen, connection_manager)
 
     # game loop
     while True:
@@ -33,6 +32,9 @@ if __name__ == "__main__":
 
         scene.update()
 
+        if scene.next_scene == "game":
+            connection_manager = scene.connection_manager
+            scene = GameScene(screen, connection_manager)
+
         pg.display.flip()
-        game_state = scene.get_next_scene()
 

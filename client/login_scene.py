@@ -1,10 +1,9 @@
 import asyncio
 import pygame as pg
-from connection_manager import login
 
 
 class LoginScene:
-    def __init__(self, screen):
+    def __init__(self, screen, connection_manager):
         # init
         self.screen = screen
         self.font = pg.font.Font(None, 32)
@@ -23,8 +22,12 @@ class LoginScene:
         self.passwd_txt = ""
         self.submit_txt = "Login"
 
+        # game settings
+        self.car = 1
+
         # scene management
-        self.next_scene = "login"
+        self.connection_manager = connection_manager
+        self.next_scene = "login_active"
 
     def update(self):
         self.screen.fill((30, 30, 30))
@@ -63,8 +66,10 @@ class LoginScene:
                 self.passwd_active = False
                 self.uname_active = False
                 self.submit_button_active = True
-                login(self.uname_txt, self.passwd_txt)
-                self.next_scene = "game"
+                if self.connection_manager.login(self.uname_txt, self.passwd_txt, self.car):
+                    self.next_scene = "game"
+                else:
+                    print("Login failed")
             else:
                 self.uname_active = False
                 self.passwd_active = False
@@ -90,10 +95,8 @@ class LoginScene:
                 elif event.key == pg.K_RETURN:
                     self.passwd_active = False
                     self.uname_active = False
-                    login(self.uname_txt, self.passwd_txt)
+                    if self.connection_manager.login(self.uname_txt, self.passwd_txt, self.car):
+                        self.next_scene = "game"
                     self.next_scene = "game"
                 else:
                     self.passwd_txt += event.unicode
-
-    def get_next_scene(self):
-        return self.next_scene

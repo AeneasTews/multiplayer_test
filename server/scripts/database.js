@@ -40,10 +40,10 @@ async function get_user(username) {
         console.error(err);
         reject(err);
       }
-
       resolve(row);
     });
   });
 }
+
 
 export {get_user, create_user, close};

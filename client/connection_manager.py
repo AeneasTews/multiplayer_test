@@ -2,45 +2,91 @@ import asyncio
 import websockets
 import requests
 from hashlib import sha256
+import json
 
 
-def login(username, password):
-    username = username
-    passwd_hash = sha256(password.encode('utf-8')).hexdigest()
-    if not handle_login_request(username, passwd_hash):
-        print("Failed to authenticate")
+# TODO: make sure everything is either " or ' or check what the convention specifies
 
-    establish_ws_connection()
-    # TODO: work on establishing a ws connection; also check whether the user actually exists
+class ConnectionManager:
+    def __init__(self):
+        # setup
+        self.websocket = None
+        self.uri = 'ws://localhost:8080'
+        self.login_data = None
+        self.loop = asyncio.new_event_loop()
 
+    def login(self, username, password, car):
+        passwd_hash = sha256(password.encode('utf-8')).hexdigest()
+        if not self.handle_login_request(username, passwd_hash, car):
+            print("Failed to authenticate")
 
-def establish_ws_connection():
-    pass
+        print('Attempting login...')
+        return asyncio.run(self.establish_ws_connection())
 
+    async def establish_ws_connection(self):
+        #self.websocket = await websockets.connect(self.uri)
+        self.websocket = self.loop.create_connection()
+        try:
+            message = {'action': 'login', 'data': self.login_data}
+            await self.websocket.send(json.dumps(message))
 
-def handle_login_request(username, passwd_hash):
-    api_url = "http://localhost:3000/"
+            state = await self.websocket.recv()
+            state = json.loads(state)
+            print(state)
+            if not state['result'] == 'success':
+                await self.websocket.close()
+                return False
 
-    data = {
-        "username": username,
-        "passwd_hash": passwd_hash
-    }
+            return True
 
-    res = requests.post(api_url + "login", json=data, headers={'Content-Type': 'application/json'})
-    return True if res.json()["status"] == "success" else False
+        except websockets.exceptions.WebSocketException as e:
+            print(e)
 
+        return False
 
-async def hello():
-    uri = "ws://localhost:8080"
-    async with websockets.connect(uri) as ws:
-        name = input("What's your name?")
+    def handle_login_request(self, username, passwd_hash, car):
+        self.login_data = {'username': username, 'passwd_hash': passwd_hash, 'car': car}
+        api_url = "http://localhost:3000/"
 
-        await ws.send(name)
-        print(f">>> {name}")
+        data = {
+            "username": username,
+            "passwd_hash": passwd_hash,
+        }
 
-        greeting = await ws.recv()
-        print(f"<<< {greeting}")
+        res = requests.post(api_url + "login", json=data, headers={'Content-Type': 'application/json'})
+        return True if res.json()["status"] == "success" else False
 
+    async def send_update(self, data):
+        if not self.websocket:
+            return False
 
-if __name__ == '__main__':
-    asyncio.run(hello())
+        message = {
+            "action": "update_position",
+            "data": {
+                "x": data["position"].x,
+                "y": data["position"].y,
+                "angle": data["angle"],
+            },
+        }
+
+        await self.websocket.send(json.dumps(message))
+
+    async def update_positions(self, data):
+        await self.send_update(data)
+        state = await self.websocket.recv()
+        state = json.loads(state)
+        print(state)
+
+    async def test_send(self, data):
+        if not self.websocket:
+            return False
+
+        message = {
+            "action": "update_position",
+            "data": data
+        }
+
+        await self.websocket.send(json.dumps(message))
+        state = await self.websocket.recv()
+        state = json.loads(state)
+        print(state)
