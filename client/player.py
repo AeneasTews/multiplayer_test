@@ -1,67 +1,85 @@
-import pygame as pg
-import loading_tools as lt
 from os import path
-
-pg.init()
+import pygame
+from loading_tools import Loader
 
 main_dir = path.split(path.abspath(__file__))[0]
-loader = lt.Loader(main_dir)
+loader = Loader(main_dir)
 
 
-class Player(pg.sprite.Sprite):
-    def __init__(self, game_size, position=(420, 420), number=1):
-        super().__init__()
+class Player:
+    def __init__(self, position, car, rotation=0):
         # load image and rect using helper function
-        self.image, self.rect = loader.load_image(path.join('sprites', 'cars', f'car{number}.png'), scale=0.3)
-        self.original_image = self.image
+        self.original_image, self.rect = loader.load_image(path.join("sprites", "cars", f"car{car}.png"), scale=0.3)
+        self.image = self.original_image  # required for rotating
+        self.car = car  # required for translation between object and tuple
 
-        # initialize position and rotation
-        self.position = pg.math.Vector2(position)
-        self.direction = pg.math.Vector2(1, 0)
+        # initialize player values
+        self.position = pygame.Vector2(position)
+        self.rect.center = self.position
 
-        # initialize values for movement
-        self.speed = 0
+        # init movement values
+        self.MAX_VEL = 3  # maximum speed in either direction
+        self.ROT_VEL = 3  # rotational speed
+        self.RESISTANCE = 0.02  # this isn't physics class --> we don't roll forever
+        self.velocity = 0
         self.acceleration = 0
-        self.MAX_SPEED = 3
-        self.RESISTANCE = 0.02
-        self.angle_speed = 0
-        self.angle = 0
-
-        # get max game size
-        self.game_size = game_size
+        self.rotation = rotation
+        self.rot_acc = 0  # using this avoids a bunch of copying of values
+        self.direction = pygame.math.Vector2(1, 0)  # a vector pointing straight in front of the car;
+        # useful for direction based movement
+        self.direction.rotate_ip(self.rotation)  # adjust vector to fit any value supplied by server
 
     def update(self):
-        # rotation
-        self.direction.rotate_ip(self.angle_speed)
-        self.angle += self.angle_speed
-        self.image = pg.transform.rotate(self.original_image, -self.angle)
+        self.update_physics()
+        self.update_image()
+
+    def update_physics(self):
+        # resistance
+        self.velocity -= self.velocity * self.RESISTANCE
+
+        # handle speed
+        self.velocity += self.acceleration
+        self.velocity = min(self.MAX_VEL, max(-self.MAX_VEL, self.velocity))  # clamp velocity between +-MAX_VEL
+
+        # handle rotation
+        self.direction.rotate_ip(self.rot_acc)  # rotate the direction vector in place
+        self.rotation += self.rot_acc  # change the cars current rotation (required for rotating the image)
+
+        # handle position
+        self.position += self.direction * self.velocity
+        self.rect.center = self.position
+
+    def update_image(self):
+        self.image = pygame.transform.rotate(self.original_image, -self.rotation)
         self.rect = self.image.get_rect(center=self.rect.center)
 
-        # movement
-        # handle resistance
-        self.speed -= self.speed * self.RESISTANCE
+    def draw(self, window):
+        # update the player
+        self.update()
 
-        # check speed against max speed and reduce if necessary, otherwise update speed
-        if self.speed > self.MAX_SPEED:
-            self.speed = self.MAX_SPEED
-        elif self.speed < -self.MAX_SPEED:
-            self.speed = -self.MAX_SPEED
-        else:
-            self.speed += self.acceleration
+        # draw the player
+        window.blit(self.image, self.rect)
 
-        # update position
-        self.position += self.direction * self.speed
-        self.rect.center = self.position
-        self.check_boundary()
+    def move(self):
+        # get list of all keys and whether they are currently pressed
+        pressed = pygame.key.get_pressed()
 
-    def accelerate(self, acceleration=0):
-        self.acceleration = acceleration
+        # handle input
+        if pressed[pygame.K_a]:
+            self.rot_acc = -3
 
-    def rotate(self, speed=0):
-        self.angle_speed = speed
+        if pressed[pygame.K_d]:
+            self.rot_acc = +3
 
-    def check_boundary(self):
-        if not self.game_size[0] - 50 > self.position.x > 50:
-            self.position.x = int(self.game_size[0] / 2)
-        if not self.game_size[1] - 50 > self.position.y > 50:
-            self.position.y = int(self.game_size[1] / 2)
+        if (not pressed[pygame.K_a] and not pressed[pygame.K_d]) or (pressed[pygame.K_d] and pressed[pygame.K_a]):
+            self.rot_acc = 0
+
+        if pressed[pygame.K_w]:
+            self.acceleration = 0.1
+
+        if pressed[pygame.K_s]:
+            self.acceleration = -0.1
+
+        if (not pressed[pygame.K_w] and not pressed[pygame.K_s]) or (pressed[pygame.K_w] and pressed[pygame.K_s]):
+            self.acceleration = 0
+
