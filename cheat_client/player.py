@@ -18,8 +18,9 @@ class Player:
         self.rect.center = self.position
 
         # init movement values
-        self.MAX_VEL = 3  # maximum speed in either direction
+        self.max_vel = 3  # maximum speed in either direction
         self.ROT_VEL = 3  # rotational speed
+        self.max_acc = 0.1  # acceleration when accelerating
         self.RESISTANCE = 0.02  # this isn't physics class --> we don't roll forever
         self.velocity = 0
         self.acceleration = 0
@@ -39,7 +40,7 @@ class Player:
 
         # handle speed
         self.velocity += self.acceleration
-        self.velocity = min(self.MAX_VEL, max(-self.MAX_VEL, self.velocity))  # clamp velocity between +-MAX_VEL
+        self.velocity = min(self.max_vel, max(-self.max_vel, self.velocity))  # clamp velocity between +-max_vel
 
         # handle rotation
         self.direction.rotate_ip(self.rot_acc)  # rotate the direction vector in place
@@ -75,10 +76,36 @@ class Player:
             self.rot_acc = 0
 
         if pressed[pygame.K_w]:
-            self.acceleration = 0.1
+            self.acceleration = self.max_acc
 
         if pressed[pygame.K_s]:
-            self.acceleration = -0.1
+            self.acceleration = -self.max_acc
 
         if (not pressed[pygame.K_w] and not pressed[pygame.K_s]) or (pressed[pygame.K_w] and pressed[pygame.K_s]):
             self.acceleration = 0
+
+        self.click_move()
+        self.cheat_speed()
+
+    def click_move(self):
+        # get pressed buttons
+        mouse = pygame.mouse.get_pressed()
+
+        # move car to cursor when clicked
+        if mouse[0] == 1:
+            self.position = pygame.mouse.get_pos()
+
+    def cheat_speed(self):
+        # get pressed buttons
+        pressed = pygame.key.get_pressed()
+
+        if pressed[pygame.K_LSHIFT]:
+            self.max_vel = 6
+            self.max_acc = 0.5
+        else:
+            self.max_vel = 3
+            self.max_acc = 0.1
+
+    def cheat_rotate(self, mouse_wheel):
+        self.rot_acc += mouse_wheel * 3
+        self.update()
