@@ -5,7 +5,7 @@
 
 The goals of this project will be to...  
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...develop a working client-server model based multiplayer game with authenticated user accounts  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...develop a working client-server model based multiplayer game
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...writing a "cheat-client" in order to gain a competitive advantage  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...developing anti-cheat capabilities in order to keep it fair
 
