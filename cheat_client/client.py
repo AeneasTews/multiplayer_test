@@ -1,14 +1,16 @@
+"""Modules used for handling network connections and pygame"""
 import pygame
 from network import Network
 
 # window initialization
-width = 1280
-height = 720
-window = pygame.display.set_mode((width, height))
+WIDTH = 1280
+HEIGHT = 720
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Client")
 
 
 def redraw_window(window, player, players):
+    """This function is used to draw the window and update the screen."""
     # draw own player and all sent players on screen
     window.fill((25, 25, 25))
     for p in players:
@@ -18,6 +20,7 @@ def redraw_window(window, player, players):
 
 
 def main():
+    """Main function."""
     # initialize networking and get a player object from the server
     network = Network("192.168.178.142", 9002)
     player = network.get_player()
@@ -46,7 +49,7 @@ def main():
         player.move()
 
         # draw screen
-        redraw_window(window, player, players)
+        redraw_window(screen, player, players)
 
 
 if __name__ == '__main__':

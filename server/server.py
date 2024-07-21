@@ -1,18 +1,20 @@
+"""Modules used for establishing and handling network connections,
+using threads, serializing data, rng and pygame"""
 import socket
-from _thread import *
+from _thread import start_new_thread
 import pickle
 from random import randrange
 import pygame
 
 # initialize networking + socket
-server = "192.168.178.142"
-port = 9002
+SERVER = "192.168.178.142"
+PORT = 9002
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 try:
     # initialize socket
-    s.bind((server, port))
+    s.bind((SERVER, PORT))
 
 except socket.error as e:
     print(e)
@@ -26,21 +28,25 @@ players = {}
 
 
 def generate_car():
+    """Abstraction for generating a car image. (Readability)"""
     # generate a random color for the player's square
     return randrange(1, 5)
 
 
 def generate_key(keys):
+    """Used to generate a random key."""
     # generate new key for player dict
     key = randrange(1000000000, 9999999999)
-    while keys.__contains__(key):
+    while key in keys:
         randrange(1000000000, 9999999999)
     return key
 
 
 def threaded_client(conn):
+    """This function starts a new thread which handles a player connection."""
     player_id = generate_key(list(players.keys()))  # store generated key in current thread
-    players[player_id] = (pygame.math.Vector2(200, 200), generate_car(), 0)  # create data for new player pos, img, rot
+    # create data for new player pos, img, rot
+    players[player_id] = (pygame.math.Vector2(200, 200), generate_car(), 0)
     print(f"{player_id}: {players[player_id]}")  # Debug
     conn.send(pickle.dumps(players[player_id]))  # send new player object to client
     while True:
@@ -54,12 +60,11 @@ def threaded_client(conn):
                 print(f"Players: {players}")  # Debug
                 break
 
-            else:
-                # returns an array containing every player except own
-                reply = []
-                for k in players.keys():
-                    if k != player_id:
-                        reply.append(players[k])
+            # returns an array containing every player except own
+            reply = []
+            for k, _ in players.items():
+                if k != player_id:
+                    reply.append(players[k])
 
             conn.send(pickle.dumps(reply))  # send other players' data to client
 
@@ -82,6 +87,7 @@ def threaded_client(conn):
 
 
 def main():
+    """Main function."""
     while True:
         # accept incoming connections and create socket conn object
         conn, addr = s.accept()
