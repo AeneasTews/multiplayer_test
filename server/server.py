@@ -1,13 +1,15 @@
 """Modules used for establishing and handling network connections,
-using threads, serializing data, rng and pygame"""
+using threads, serializing data, rng, time and pygame"""
 import socket
 from _thread import start_new_thread
 import pickle
 from random import randrange
+from time import time
 import pygame
 
+
 # initialize networking + socket
-SERVER = "192.168.178.142"
+SERVER = "172.20.10.2"
 PORT = 9002
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,17 +44,51 @@ def generate_key(keys):
     return key
 
 
+# initialize anti-cheat constants
+MAX_SPEED = 200
+
+
+def anit_cheat_checks(data, player_id):
+    """This function is used to run active checks."""
+    if speed_check(data, player_id):
+        return True
+
+    return False
+
+
+def speed_check(data, player_id):
+    """This function checks if the player has exceeded a preset maximum speed.
+    This is done by comparing the currently sent and the last known position,
+    while taking the time difference between the two into account."""
+    # calculate the distance the player traveled
+    current_pos = data[0]
+    last_pos = players[player_id][0]
+
+    distance = abs((current_pos - last_pos).length())
+
+    # calculate the time it took
+    time_diff = data[3] - players[player_id][3]
+
+    # calculate speed
+    speed = distance / time_diff
+
+    if speed > MAX_SPEED:
+        print(f"Player {player_id} has exceeded maximum speed ({speed}).")
+        return False
+
+    return True
+
+
 def threaded_client(conn):
     """This function starts a new thread which handles a player connection."""
     player_id = generate_key(list(players.keys()))  # store generated key in current thread
-    # create data for new player pos, img, rot
-    players[player_id] = (pygame.math.Vector2(200, 200), generate_car(), 0)
+    # create data for new player pos, img, rot, current time stamp
+    players[player_id] = (pygame.math.Vector2(200, 200), generate_car(), 0, time())
     print(f"{player_id}: {players[player_id]}")  # Debug
     conn.send(pickle.dumps(players[player_id]))  # send new player object to client
     while True:
         try:
             data = pickle.loads(conn.recv(2048))  # wait for updated location info from client
-            players[player_id] = data  # update dict with new info
 
             if not data:  # follow up on clean exit by client (initiated via None as sent data)
                 print(f"Disconnected\nRemoving player: {player_id}")
@@ -60,11 +96,21 @@ def threaded_client(conn):
                 print(f"Players: {players}")  # Debug
                 break
 
+            data = data + (time(),)  # add a time stamp to the data
+
+            if not anit_cheat_checks(data, player_id):
+                print(f"Cheating detected\nRemoving player: {player_id}")
+                players.pop(player_id)
+                print(f"Players: {players}")
+                break
+
+            players[player_id] = data  # update dict with new info
+
             # returns an array containing every player except own
             reply = []
-            for k, _ in players.items():
+            for k, p in players.items():
                 if k != player_id:
-                    reply.append(players[k])
+                    reply.append(p)
 
             conn.send(pickle.dumps(reply))  # send other players' data to client
 
