@@ -46,14 +46,18 @@ def generate_key(keys):
 
 # initialize anti-cheat constants
 MAX_SPEED = 200
+MAX_ROT = 200
 
 
 def anit_cheat_checks(data, player_id):
     """This function is used to run active checks."""
-    if speed_check(data, player_id):
-        return True
+    if not speed_check(data, player_id):
+        return False
 
-    return False
+    if not rotation_check(data, player_id):
+        return False
+
+    return True
 
 
 def speed_check(data, player_id):
@@ -74,6 +78,29 @@ def speed_check(data, player_id):
 
     if speed > MAX_SPEED:
         print(f"Player {player_id} has exceeded maximum speed ({speed}).")
+        return False
+
+    return True
+
+
+def rotation_check(data, player_id):
+    """This function is used to check if the player is exceeding a preset maximum
+    rotational speed. This is done by comparing the player's rotation across two received
+    packets, while taking the time difference into account."""
+    # calculate the change in rotation
+    current_rot = data[2]
+    last_rot = players[player_id][2]
+
+    angle_change = abs(current_rot - last_rot)
+
+    # calculate the time difference
+    time_diff = data[3] - players[player_id][3]
+
+    # calculate speed
+    angle_speed = angle_change / time_diff
+
+    if angle_speed > MAX_ROT:
+        print(f"Player {player_id} has exceeded maximum rotation speed ({angle_speed}).")
         return False
 
     return True
