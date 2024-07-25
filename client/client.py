@@ -31,7 +31,7 @@ def redraw_window(window, player, players):
 def main():
     """Main function"""
     # initialize networking and get a player object from the server
-    network = Network("172.20.10.2", 9002)
+    network = Network("192.168.56.1", 9002)
     player = network.get_player()
 
     # framerate setup
