@@ -3,6 +3,7 @@ serializing data and game-specific data."""
 import socket
 import pickle
 from player import Player
+from time import time
 
 
 class Network:
@@ -38,8 +39,8 @@ class Network:
     def send(self, player):
         """This function is used to send the client's data and receive other players' data."""
         try:
-            # translate and send current player object to server
-            data = (player.position, player.car, player.rotation)
+            # translate and send current player object to server and add a time stamp
+            data = (player.position, player.car, player.rotation, time())
             self.client.send(pickle.dumps(data))
 
             # receive all other players' data from server and translate

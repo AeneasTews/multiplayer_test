@@ -10,7 +10,7 @@ import pygame
 
 
 # initialize networking + socket
-SERVER = "192.168.56.1"
+SERVER = "192.168.178.142"
 PORT = 9002
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -64,7 +64,7 @@ def update_history(data, player_id):
 # initialize anti-cheat constants
 MAX_SPEED = 201
 MAX_ROT = 200
-MAX_ACC = 25
+MAX_ACC = 30
 
 
 def anit_cheat_checks(data, player_id):
@@ -149,7 +149,6 @@ def acceleration_check(data, player_id):
 
     # calculate acceleration
     acceleration = abs(current_speed - last_speed)
-    print(acceleration)
 
     if acceleration > MAX_ACC:
         print(f"Player {player_id} has exceeded maximum acceleration ({acceleration}).")
@@ -176,8 +175,6 @@ def threaded_client(conn):
                 history.pop(player_id)  # remove player's history
                 print(f"Players: {players}")  # Debug
                 break
-
-            data = data + (time(),)  # add a time stamp to the data
 
             if not anit_cheat_checks(data, player_id):
                 print(f"Cheating detected\nRemoving player: {player_id}")
