@@ -25,7 +25,7 @@ class Player:
 
         # initialize player values
         self.position = pygame.Vector2(position)
-        self.rect.center = self.position
+        self.rect.center = (640, 360)
 
         # init movement values
         self.velocity = 0
@@ -58,19 +58,20 @@ class Player:
 
         # handle position
         self.position += self.direction * self.velocity
-        self.rect.center = self.position
+        self.rect.center = (640, 360)
 
     def update_image(self):
         """This function is used to update the image of the player."""
         self.image = pygame.transform.rotate(self.original_image, -self.rotation)
         self.rect = self.image.get_rect(center=self.rect.center)
 
-    def draw(self, window):
+    def draw(self, window, x=640, y=360):
         """This function is used to draw the player on the screen."""
         # update the player
         self.update()
 
         # draw the player
+        self.rect.center = (x, y)
         window.blit(self.image, self.rect)
 
     def move(self):

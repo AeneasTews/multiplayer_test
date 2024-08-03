@@ -42,8 +42,8 @@ def generate_car():
 
 def generate_history():
     """This function initializes a history array for a player."""
-    return [(pygame.math.Vector2(200, 200), generate_car(), 0, time()),
-            (pygame.math.Vector2(200, 200), generate_car(), 0, time() + 1)]
+    return [(pygame.math.Vector2(0, 0), generate_car(), 0, time()),
+            (pygame.math.Vector2(0, 0), generate_car(), 0, time() + 1)]
 
 
 def generate_key(keys):
@@ -62,9 +62,9 @@ def update_history(data, player_id):
 
 
 # initialize anti-cheat constants
-MAX_SPEED = 201
-MAX_ROT = 200
-MAX_ACC = 30
+MAX_SPEED = 350
+MAX_ROT = 300
+MAX_ACC = 200
 
 
 def anit_cheat_checks(data, player_id):
@@ -96,7 +96,12 @@ def calc_speed(data1, data2):
     # calculate the time difference
     time_diff = data2[3] - data1[3]
 
-    return distance / time_diff
+    try:
+        return distance / time_diff
+
+    except ZeroDivisionError:
+        print(f"Time error: {time_diff}")
+        return MAX_SPEED + 1
 
 
 def speed_check(data, player_id):
@@ -161,7 +166,7 @@ def threaded_client(conn):
     """This function starts a new thread which handles a player connection."""
     player_id = generate_key(list(players.keys()))  # store generated key in current thread
     # create data for new player pos, img, rot, current time stamp
-    players[player_id] = (pygame.math.Vector2(200, 200), generate_car(), 0, time())
+    players[player_id] = (pygame.math.Vector2(0, 0), generate_car(), 0, time())
     history[player_id] = generate_history()
     print(f"{player_id}: {players[player_id]}")  # Debug
     conn.send(pickle.dumps(players[player_id]))  # send new player object to client

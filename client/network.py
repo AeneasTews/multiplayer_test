@@ -50,6 +50,10 @@ class Network:
             print(e)
             return None
 
+        except EOFError as e:
+            print(e)
+            return None
+
     def disconnect(self):
         """This function is used to disconnect the network connection."""
         try:
